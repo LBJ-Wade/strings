@@ -78,7 +78,7 @@ class PowerSpectrum(Statistic):
     
 class PDF(Statistic):
     def __init__(self, name='pdf', bins=110, normed=True,
-                 binmin=1e5, binmax=1e10):
+                 binmin=0, binmax=1e10):
         self.name = name
         self.bins = bins
         self.normed = normed

@@ -3,18 +3,104 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde as kde
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pylab as pl
+from scipy.interpolate import LSQUnivariateSpline as interpolate
 
 from .statistic import PDF, PowerSpectrum, Moments
 
+def plot_powerspectrum(cmb_mapset, string_mapset, which='gradgrad', residuals=True,
+                beatdown=1., string_band=False, xmin=1000, xmax=5000, 
+                ps_kwargs=None):
+    
+    cmb_maps = getattr(cmb_mapset, which)
+    stringy_maps = getattr(string_mapset, which)
+
+    if ps_kwargs is None:
+        ps_kwargs = {}        
+    power = PowerSpectrum(**ps_kwargs)
+    
+    if 'power' not in cmb_maps.statistics:
+        cmb_maps.apply_statistic(power)
+    if 'power' not in stringy_maps.statistics:
+        stringy_maps.apply_statistic(power)
+
+    nbins = len(cmb_maps.statistics['power'][0][0])
+    Ncmb = cmb_maps.N
+    Nstring = stringy_maps.N
+    
+    h_stringy = np.zeros((Nstring,nbins))
+    h_cmb = np.zeros((Ncmb,nbins))
+
+    for i in np.arange(Ncmb):
+        xs = cmb_maps.statistics['power'][i][0]
+        h_cmb[i,:] = cmb_maps.statistics['power'][i][1]
+
+    h_mean = h_cmb.mean(axis=0)
+    h_std = h_cmb.std(axis=0)
+
+    for i in np.arange(Nstring):
+        xs = stringy_maps.statistics['power'][i][0]
+        h_stringy[i,:] = stringy_maps.statistics['power'][i][1]
+
+    h_mean_string = h_stringy.mean(axis=0)
+    h_std_string = h_stringy.std(axis=0)
+
+    fig1 = plt.figure(figsize=(7,7))
+    
+    plt.plot(xs, h_mean, 'k', lw=1)
+    plt.fill_between(xs, (h_mean - h_std), (h_mean + h_std), color='k', alpha=0.3)
+
+    plt.plot(xs, h_mean_string, 'r', lw=1)
+    plt.xlim(xmin=xmin, xmax=xmax)
+    
+
+    # PLOT RESIDUALS:
+    fig2 = plt.figure(figsize=(7,7))
+
+    plt.plot(xs, h_mean_string - h_mean, color='r')
+    plt.xlim(xmin=xmin, xmax=xmax)
+    
+    plt.fill_between(xs, -h_std/beatdown, h_std/beatdown, color='k', alpha=0.3)
+    plt.fill_between(xs, h_mean_string - h_mean - h_std_string/beatdown,
+                     h_mean_string - h_mean + h_std_string/beatdown, color='r', alpha=0.3)
+
+    plt.title('Gmu = {:.1e}'.format(stringy_maps.kwargs['Gmu']))
+
+    return fig1, fig2
+
+pdf_defaults={
+    'binmin':{'gradgrad':0,
+              'gradgrad_rotstick':3e8,
+              'map':-500},
+    'binmax':{'gradgrad':1e10,
+              'gradgrad_rotstick':7e8,
+              'map':500}}
+
+pdf_xmax_defaults = {'gradgrad':0.2e10,
+                     'gradgrad_rotstick':0.7e9,
+                     'map':500}
+    
 def plot_pdf(cmb_mapset, string_mapset, which='gradgrad', residuals=True,
-             beatdown=10., string_band=False, xmax=0.2e10,
-             pdf_kwargs=None):
+             beatdown=1., string_band=False, xmax=None,
+             pdf_kwargs=None, fit_chisq=False,
+             polyfit_order=30, ax=None,
+             resid_only=False,
+             title=None,
+             pdf_only=False):
     
     cmb_maps = getattr(cmb_mapset, which)
     stringy_maps = getattr(string_mapset, which)
 
     if pdf_kwargs is None:
         pdf_kwargs = {}
+
+    for prop in ['binmin', 'binmax']:
+        if prop not in pdf_kwargs:
+            pdf_kwargs[prop] = pdf_defaults[prop][which]
+
+    if xmax is None:
+        xmax = pdf_xmax_defaults[which]
+            
+            
     pdf = PDF(**pdf_kwargs)
     
     if 'pdf' not in cmb_maps.statistics:
@@ -34,6 +120,8 @@ def plot_pdf(cmb_mapset, string_mapset, which='gradgrad', residuals=True,
         h_cmb[i,:] = cmb_maps.statistics['pdf'][i][1]
 
     h_mean = h_cmb.mean(axis=0)
+    #c = np.polyfit(xs, h_mean, polyfit_order)
+    #h_mean = np.polyval(c, xs)
     h_std = h_cmb.std(axis=0)
 
     for i in np.arange(Nstring):
@@ -41,30 +129,69 @@ def plot_pdf(cmb_mapset, string_mapset, which='gradgrad', residuals=True,
         h_stringy[i,:] = stringy_maps.statistics['pdf'][i][1]
 
     h_mean_string = h_stringy.mean(axis=0)
+    #c = np.polyfit(xs, h_mean_string, polyfit_order)
+    #h_mean_string = np.polyval(c, xs)
     h_std_string = h_stringy.std(axis=0)
 
-    fig1 = plt.figure(figsize=(7,7))
-    
-    plt.plot(xs, h_mean, 'k', lw=1)
-    plt.fill_between(xs, (h_mean - h_std), (h_mean + h_std), color='k', alpha=0.3)
+    ax_is_none = ax is None
+    if not resid_only:
+        if ax_is_none:
+            fig1 = plt.figure(figsize=(7,7))
+            ax = plt.gca()
+        else:
+            fig1 = plt.gcf()
 
-    plt.plot(xs, h_mean_string, 'r', lw=1)
-    plt.xlim(xmax=xmax)
-    
+        ax.plot(xs, h_mean, 'k', lw=1)
+        ax.fill_between(xs, (h_mean - h_std), (h_mean + h_std), color='k', alpha=0.3)
+
+        ax.plot(xs, h_mean_string, 'r', lw=1)
+        ax.set_xlim(xmax=xmax)
+
+        if title is None:
+            title = 'Gmu = {:.1e}'.format(stringy_maps.kwargs['Gmu'])
+        ax.set_title(title)
+
+        plt.draw()
 
     # PLOT RESIDUALS:
-    fig2 = plt.figure(figsize=(7,7))
+    if not pdf_only:
+        if ax_is_none:
+            fig2 = plt.figure(figsize=(7,7))
+            ax = plt.gca()
+        else:
+            fig2 = plt.gcf()
+            
 
-    plt.plot(xs, h_mean_string - h_mean, color='r')
-    plt.xlim(xmax=xmax)
-    
-    plt.fill_between(xs, -h_std/beatdown, h_std/beatdown, color='k', alpha=0.3)
-    plt.fill_between(xs, h_mean_string - h_mean - h_std_string/beatdown,
-                     h_mean_string - h_mean + h_std_string/beatdown, color='r', alpha=0.3)
+        ax.plot(xs, h_mean_string - h_mean, color='r')
+        ax.set_xlim(xmax=xmax)
 
-    plt.title('Gmu = {:.1e}'.format(stringy_maps.kwargs['Gmu']))
-
-    return fig1, fig2
+        if beatdown > 1:
+            c = np.polyfit(xs, h_mean, polyfit_order)
+            h_mean = np.polyval(c, xs)            
+            c = np.polyfit(xs, h_mean_string, polyfit_order)
+            h_mean_string = np.polyval(c, xs)
+            
+            
+        ax.fill_between(xs, -h_std/beatdown, h_std/beatdown, color='k', alpha=0.3)
+        ax.fill_between(xs, h_mean_string - h_mean - h_std_string/beatdown,
+                            h_mean_string - h_mean + h_std_string/beatdown, color='r', alpha=0.3)
+        if beatdown > 1:
+            ax.plot(xs, -h_std, color='k', alpha=0.5)
+            ax.plot(xs, h_std, color='k', alpha=0.5)
+            ax.plot(xs, h_mean_string - h_mean - h_std_string, alpha=0.5, color='r')
+            ax.plot(xs, h_mean_string - h_mean + h_std_string, alpha=0.5, color='r')
+            
+        if title is None:
+            title = 'Gmu = {:.1e}'.format(stringy_maps.kwargs['Gmu'])
+        ax.set_title(title)
+        plt.draw()
+        
+    if resid_only:
+        return fig2
+    elif pdf_only:
+        return fig1
+    else:
+        return fig1, fig2
         
     
 def plot_contours(x, y,xlabel='', ylabel='',

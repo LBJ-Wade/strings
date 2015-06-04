@@ -18,11 +18,13 @@ STRING_MAP_FILE = '/Users/verag/Research/strings/strings/data/dTmap_stg_Dcmb0000
 SPECTRA_FILE = '/Users/verag/Research/strings/strings/data/lensedCls.dat'
 
 
-def obtain_N_cmb_maps(fwhm=1.4, string_map_file=STRING_MAP_FILE,
+def obtain_N_cmb_maps(fwhm=1.4, string_file_num=0,
                         spectra_file=SPECTRA_FILE, map_fov_deg=7.2,
                         return_strings=False,
                         beam_smear=True, Nmaps=1, Gmu=1e-7,
                         noise=16):
+
+    string_map_file = '/Users/verag/Research/strings/strings/data/dTmap_stg_Dcmb000{}.fits'.format(string_file_num) # this can be 0-9
 
     maps = []
     maps_stringy = []

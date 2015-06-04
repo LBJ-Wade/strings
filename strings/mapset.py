@@ -126,11 +126,22 @@ class MapSet(object):
         return self[i][edge:-edge, edge:-edge]
     
     def plot_map(self,i=0, figsize=(6.5,6.5),
-                 edge=None, colorbar=True, **kwargs):
-        plt.figure(figsize=figsize)
-        plt.imshow(self.edged(i, edge), **kwargs)
+                 edge=None, colorbar=True,
+                 ax=None, fig=None,
+                 title='',
+                 **kwargs):
+        
+        if ax is None:
+            plt.figure(figsize=figsize)
+            ax = plt.gca()
+            fig = plt.gcf()
+        else:
+            fig = plt.gcf()
+            
+        cax = ax.imshow(self.edged(i, edge), **kwargs)
+        ax.set_title(title)
         if colorbar:
-            plt.colorbar()
+            fig.colorbar(cax)
 
             
     def load_kwargs(self):
