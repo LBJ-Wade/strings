@@ -6,10 +6,23 @@ import os, os.path, glob, shutil
 import sys,re
 import cPickle as pickle
 
+import logging
+
 from .simulator import obtain_N_cmb_maps
 from .statistic import Statistic
 
 MAPSROOT = 'maps'
+
+def generate_gradmaps(parent_folder='.', scaleX=None, scaleY=None, **kwargs):
+    logging.debug('Generating gradmaps, parent folder={}'.format(parent_folder))
+    mapfiles = glob.glob('{}/map*.npy'.format(parent_folder))
+    
+    maps = []
+    for mf in mapfiles:
+        m = np.load(mf)
+        gradx,grady = np.gradient(m, scaleX, scaleY)
+        maps.append(np.sqrt(gradx**2 + grady**2))
+    return maps
 
 class MapSet_Group(object):
     def __init__(self, name='cmb', N=100,
@@ -21,20 +34,27 @@ class MapSet_Group(object):
             
         for k,v in kwargs.items():
             name += '_{}{}'.format(k,v)
-            
+
+        logging.debug('Maps being created...')
         self.map = MapSet(name, N=N, recalc=recalc,
                             return_strings=strings, **kwargs)
-        
-        # no need to recalc again
-        self.grad = Grad_MapSet(name, N=N,
-                            return_strings=strings, **kwargs)
-        self.gradgrad = GradGrad_MapSet(name, N=N,
-                                          return_strings=strings, **kwargs)
-
+        logging.debug('Grad Maps being created...')
+        self.grad = MapSet('{}/grad'.format(name), N=N, recalc=recalc,
+                            generator=generate_gradmaps,
+                            parent_folder='{}/{}'.format(MAPSROOT,name),
+                            scaleX=self.map.scaleX, scaleY=self.map.scaleY,
+                            **kwargs)
+        logging.debug('GradGrad Maps being created...')
+        self.gradgrad = MapSet('{}/grad/grad'.format(name), N=N, recalc=recalc,
+                               generator=generate_gradmaps,
+                               parent_folder='{}/{}/grad'.format(MAPSROOT,name),
+                               scaleX=self.grad.scaleX, scaleY=self.grad.scaleY,
+                               **kwargs)
     
 class MapSet(object):
     def __init__(self, folder='cmb', N=100,
                  recalc=False, map_fov_deg=7.2,
+                 generator=obtain_N_cmb_maps,
                  **kwargs):
         """
         folder is a folder (under MAPSROOT)
@@ -43,8 +63,13 @@ class MapSet(object):
 
         if files are not in folder, N maps will be
         generated according to keyword arguments
-        provided, passed to obtain_N_cmb_maps. 
-        
+        provided, passed to generator function.
+
+        generator function must be able to be called::
+
+            generator(Nmaps=N, map_fov_deg=map_fov_deg, **kwargs)
+
+        and return N maps.
         """
         
         folder = '{}/{}'.format(MAPSROOT,folder)
@@ -57,7 +82,7 @@ class MapSet(object):
         self.kwargs = kwargs
         
         mapfiles = glob.glob('{}/map*.npy'.format(folder))
-        
+            
         if len(mapfiles) >= N and not recalc:
             self.maps = [np.load(f) for f in mapfiles[:N]]
             kwargs = self.load_kwargs()
@@ -68,7 +93,7 @@ class MapSet(object):
                         
             #self.maps = obtain_N_cmb_maps(Nmaps=N, map_fov_deg=map_fov_deg,
             #                              **kwargs)
-            self.maps = self.generate()
+            self.maps = generator(Nmaps=N, map_fov_deg=map_fov_deg, **kwargs)
             self.save_maps()
             self.write_kwargs(**kwargs)
 
@@ -122,14 +147,15 @@ class MapSet(object):
         s_all = np.array(s_all)
 
         self.statistics[s.name] = s_all
-                 
-        
+
+                        
 class Stringy_MapSet(MapSet):
     def __init__(self):
         pass
         
 class Grad_MapSet(MapSet):
-    def __init__(self, folder, recalc=False, **kwargs):
+    def __init__(self, folder, parent_folder, recalc=False, **kwargs):
+        self.parent_folder = parent_folder
         self.folder = '{}/{}/grad'.format(MAPSROOT, folder)
         if not os.path.exists(self.folder):
             os.makedirs(self.folder)
@@ -156,7 +182,17 @@ class Grad_MapSet(MapSet):
             self.kwargs = kwargs
 
         self.statistics = {}
+
+    def generate(self, recalc=False):
+        """doesn't work yet; that's why __init__ is re-written instead of using MapSet.__init__..."""
         
+        mapset = MapSet(self.parent_folder, recalc=recalc, **self.kwargs)
+        maps = []
+        for m in mapset.maps:
+            gradx,grady = np.gradient(m,self.scaleX,self.scaleY)
+            maps.append(np.sqrt(gradx**2 + grady**2))
+        return maps
+    
 class GradGrad_MapSet(Grad_MapSet):
     def __init__(self, folder, **kwargs):
         Grad_MapSet.__init__(self, '{}/grad'.format(folder), **kwargs)

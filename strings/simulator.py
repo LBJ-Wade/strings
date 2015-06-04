@@ -21,7 +21,7 @@ def obtain_N_cmb_maps(fwhm=1.4, string_map_file=STRING_MAP_FILE,
                         spectra_file=SPECTRA_FILE, map_fov_deg=7.2,
                         return_strings=False,
                         beam_smear=True, Nmaps=1, Gmu=1e-7,
-                        noise=20):
+                        noise=16):
 
     maps = []
     maps_stringy = []
