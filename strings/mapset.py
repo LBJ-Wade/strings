@@ -10,6 +10,7 @@ import logging
 
 from .simulator import obtain_N_cmb_maps
 from .statistic import Statistic
+from .convolve import generate_rotated_stick_convolutions
 
 MAPSROOT = 'maps'
 
@@ -50,11 +51,18 @@ class MapSet_Group(object):
                                parent_folder='{}/{}/grad'.format(MAPSROOT,name),
                                scaleX=self.grad.scaleX, scaleY=self.grad.scaleY,
                                **kwargs)
-    
+        logging.debug('(gradgrad) Rotated Stick Convolution Maps being created...')
+        self.gradgrad_rotstick = MapSet('{}/grad/grad/rotstick'.format(name), N=N, recalc=recalc,
+                            generator=generate_rotated_stick_convolutions,
+                            parent_folder='{}/{}/grad/grad'.format(MAPSROOT,name),
+                            default_edge=30,
+                            **kwargs)
+        
 class MapSet(object):
     def __init__(self, folder='cmb', N=100,
                  recalc=False, map_fov_deg=7.2,
                  generator=obtain_N_cmb_maps,
+                 default_edge=5,
                  **kwargs):
         """
         folder is a folder (under MAPSROOT)
@@ -80,6 +88,7 @@ class MapSet(object):
         self.map_fov_deg = map_fov_deg
         self.N = N
         self.kwargs = kwargs
+        self.default_edge = default_edge
         
         mapfiles = glob.glob('{}/map*.npy'.format(folder))
             
@@ -111,16 +120,19 @@ class MapSet(object):
     def __getitem__(self, i):
         return self.maps[i]
 
-    def edged(self, i, edge=5):
+    def edged(self, i, edge=None):
+        if edge is None:
+            edge = self.default_edge
         return self[i][edge:-edge, edge:-edge]
     
     def plot_map(self,i=0, figsize=(6.5,6.5),
-                 edge=5, colorbar=True, **kwargs):
+                 edge=None, colorbar=True, **kwargs):
         plt.figure(figsize=figsize)
         plt.imshow(self.edged(i, edge), **kwargs)
         if colorbar:
             plt.colorbar()
-                
+
+            
     def load_kwargs(self):
         kwargs_file = '{}/kwargs.pkl'.format(self.folder)
         return pickle.load(open(kwargs_file, 'rb'))
@@ -136,7 +148,7 @@ class MapSet(object):
             fname = '{}/map{}.npy'.format(self.folder,i)
             np.save(fname, m)
             
-    def apply_statistic(self, s, edge=5,**kwargs):
+    def apply_statistic(self, s, edge=None,**kwargs):
         if not isinstance(s, Statistic):
             raise ValueError('Must pass valid Statistic object')
 

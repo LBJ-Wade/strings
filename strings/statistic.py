@@ -77,24 +77,19 @@ class PowerSpectrum(Statistic):
         return res 
     
 class PDF(Statistic):
-    def __init__(self, name='pdf'):
+    def __init__(self, name='pdf', bins=110, normed=True,
+                 binmin=1e5, binmax=1e10):
         self.name = name
+        self.bins = bins
+        self.normed = normed
+        self.binmin = binmin
+        self.binmax = binmax
 
-    def __call__(self, data,
-                 bins=110, normed=True,
-                 binmin=1e5,binmax=1e10,):
+    def __call__(self, data):
 
-        bin_edges = np.linspace(binmin, binmax, bins+1)
+        bin_edges = np.linspace(self.binmin, self.binmax, self.bins+1)
         bin_mids = (bin_edges[1:] + bin_edges[:-1])/2
-        h, b = np.histogram(data.ravel(),bin_edges,normed=normed)
-
-        #(h,y,rest) = plt.hist(data.ravel(),bins=bins,
-        #                      histtype=histtype,normed=normed,
-        #                      color='k', alpha=0.2, lw=0.5);
-
-        #x = [(y[i+1]-y[i])/2.+y[i] for i in np.arange(len(y)-1) ]
-
-        
+        h, b = np.histogram(data.ravel(),bin_edges,normed=self.normed)
         
         res = np.array([bin_mids,h])
         return res

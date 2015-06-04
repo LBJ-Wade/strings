@@ -4,7 +4,69 @@ from scipy.stats import gaussian_kde as kde
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pylab as pl
 
+from .statistic import PDF, PowerSpectrum, Moments
 
+def plot_pdf(cmb_mapset, string_mapset, which='gradgrad', residuals=True,
+             beatdown=10., string_band=False, xmax=0.2e10,
+             pdf_kwargs=None):
+    
+    cmb_maps = getattr(cmb_mapset, which)
+    stringy_maps = getattr(string_mapset, which)
+
+    if pdf_kwargs is None:
+        pdf_kwargs = {}
+    pdf = PDF(**pdf_kwargs)
+    
+    if 'pdf' not in cmb_maps.statistics:
+        cmb_maps.apply_statistic(pdf)
+    if 'pdf' not in stringy_maps.statistics:
+        stringy_maps.apply_statistic(pdf)
+
+    nbins = len(cmb_maps.statistics['pdf'][0][0])
+    Ncmb = cmb_maps.N
+    Nstring = stringy_maps.N
+    
+    h_stringy = np.zeros((Nstring,nbins))
+    h_cmb = np.zeros((Ncmb,nbins))
+
+    for i in np.arange(Ncmb):
+        xs = cmb_maps.statistics['pdf'][i][0]
+        h_cmb[i,:] = cmb_maps.statistics['pdf'][i][1]
+
+    h_mean = h_cmb.mean(axis=0)
+    h_std = h_cmb.std(axis=0)
+
+    for i in np.arange(Nstring):
+        xs = stringy_maps.statistics['pdf'][i][0]
+        h_stringy[i,:] = stringy_maps.statistics['pdf'][i][1]
+
+    h_mean_string = h_stringy.mean(axis=0)
+    h_std_string = h_stringy.std(axis=0)
+
+    fig1 = plt.figure(figsize=(7,7))
+    
+    plt.plot(xs, h_mean, 'k', lw=1)
+    plt.fill_between(xs, (h_mean - h_std), (h_mean + h_std), color='k', alpha=0.3)
+
+    plt.plot(xs, h_mean_string, 'r', lw=1)
+    plt.xlim(xmax=xmax)
+    
+
+    # PLOT RESIDUALS:
+    fig2 = plt.figure(figsize=(7,7))
+
+    plt.plot(xs, h_mean_string - h_mean, color='r')
+    plt.xlim(xmax=xmax)
+    
+    plt.fill_between(xs, -h_std/beatdown, h_std/beatdown, color='k', alpha=0.3)
+    plt.fill_between(xs, h_mean_string - h_mean - h_std_string/beatdown,
+                     h_mean_string - h_mean + h_std_string/beatdown, color='r', alpha=0.3)
+
+    plt.title('Gmu = {:.1e}'.format(stringy_maps.kwargs['Gmu']))
+
+    return fig1, fig2
+        
+    
 def plot_contours(x, y,xlabel='', ylabel='',
                   input_x=None, input_y=None,
                   input_color=['red','blue','magenta'], fontsize=22,

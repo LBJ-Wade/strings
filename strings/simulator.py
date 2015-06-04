@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import logging
 import healpy as hp
 from flipper import *
 import utils
@@ -49,6 +50,7 @@ def obtain_N_cmb_maps(fwhm=1.4, string_map_file=STRING_MAP_FILE,
     cl = spectra[:,1]/(ls*(ls + 1))*2.*np.pi
 
     for i in np.arange(Nmaps):
+        logging.info('{} of {}'.format(i+1, Nmaps))
         cmb_map.fillWithGaussianRandomField(ls,cl)
         if beam_smear:
             cmb_map = cmb_map.convolveWithGaussian(fwhm=fwhm)
