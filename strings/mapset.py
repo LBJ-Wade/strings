@@ -28,6 +28,7 @@ def generate_gradmaps(parent_folder='.', scaleX=None, scaleY=None, **kwargs):
 class MapSet_Group(object):
     def __init__(self, name='cmb', N=100,
                  recalc=False, strings=False,
+                 calc_grad=True,calc_gradgrad=True,calc_rotstick=True,
                  **kwargs):
 
         if strings:
@@ -39,24 +40,28 @@ class MapSet_Group(object):
         logging.debug('Maps being created...')
         self.map = MapSet(name, N=N, recalc=recalc,
                             return_strings=strings, **kwargs)
-        logging.debug('Grad Maps being created...')
-        self.grad = MapSet('{}/grad'.format(name), N=N, recalc=recalc,
-                            generator=generate_gradmaps,
-                            parent_folder='{}/{}'.format(MAPSROOT,name),
-                            scaleX=self.map.scaleX, scaleY=self.map.scaleY,
-                            **kwargs)
-        logging.debug('GradGrad Maps being created...')
-        self.gradgrad = MapSet('{}/grad/grad'.format(name), N=N, recalc=recalc,
-                               generator=generate_gradmaps,
-                               parent_folder='{}/{}/grad'.format(MAPSROOT,name),
-                               scaleX=self.grad.scaleX, scaleY=self.grad.scaleY,
-                               **kwargs)
-        logging.debug('(gradgrad) Rotated Stick Convolution Maps being created...')
-        self.gradgrad_rotstick = MapSet('{}/grad/grad/rotstick'.format(name), N=N, recalc=recalc,
-                            generator=generate_rotated_stick_convolutions,
-                            parent_folder='{}/{}/grad/grad'.format(MAPSROOT,name),
-                            default_edge=30,
-                            **kwargs)
+
+        if calc_grad or calc_gradgrad or calc_rotstick:
+            logging.debug('Grad Maps being created...')
+            self.grad = MapSet('{}/grad'.format(name), N=N, recalc=recalc,
+                                generator=generate_gradmaps,
+                                parent_folder='{}/{}'.format(MAPSROOT,name),
+                                scaleX=self.map.scaleX, scaleY=self.map.scaleY,
+                                **kwargs)
+        if calc_gradgrad  or calc_rotstick:
+            logging.debug('GradGrad Maps being created...')
+            self.gradgrad = MapSet('{}/grad/grad'.format(name), N=N, recalc=recalc,
+                                   generator=generate_gradmaps,
+                                   parent_folder='{}/{}/grad'.format(MAPSROOT,name),
+                                   scaleX=self.grad.scaleX, scaleY=self.grad.scaleY,
+                                   **kwargs)
+        if calc_rotstick:
+            logging.debug('(gradgrad) Rotated Stick Convolution Maps being created...')
+            self.gradgrad_rotstick = MapSet('{}/grad/grad/rotstick'.format(name), N=N, recalc=recalc,
+                                generator=generate_rotated_stick_convolutions,
+                                parent_folder='{}/{}/grad/grad'.format(MAPSROOT,name),
+                                default_edge=30,
+                                **kwargs)
         
 class MapSet(object):
     def __init__(self, folder='cmb', N=100,
