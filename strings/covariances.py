@@ -12,8 +12,8 @@ from .statistic import PDF, PowerSpectrum, Moments
 from .convolve import generate_rotated_stick_convolutions
 from .mapset import MapSet_Group
 
-SPECTRA_FILE = '/Users/verag/Research/strings/strings/data/lensedCls.dat'
-STATS_ROOT = '/Users/verag/Research/strings/stats'
+SPECTRA_FILE = '/data/verag/strings/inputs/lensedCls.dat'
+STATS_ROOT = '/data/verag/strings/stats'
 pdf_defaults={
     'binmin':{'gradgrad':0,
               'gradgrad_rotstick':3e8,
@@ -44,7 +44,8 @@ def compute_largemap_stats(statnumber, whichmap='gradgrad_rotstick',
         calc_gradgrad = True
     if whichmap=='gradgrad_rotstick':
         calc_rotstick = True
-        
+
+    name += '{}'.format(statnumber)
     msg = MapSet_Group(N=1,
                         calc_grad=calc_grad, calc_gradgrad=calc_gradgrad,
                         calc_rotstick=calc_rotstick,
@@ -91,8 +92,7 @@ def compute_largemap_stats(statnumber, whichmap='gradgrad_rotstick',
     
 
     
-def compute_pdfs(Nmaps=100):
-
+def compute_pdfs(Nmaps=20):
     for i in np.arange(Nmaps):
         print 'calculating for {}/{}...'.format(i+1,Nmaps)
         compute_largemap_stats(i, whichmap='gradgrad_rotstick',

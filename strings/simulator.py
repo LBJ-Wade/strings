@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
-import healpy as hp
+#import healpy as hp
 from flipper import *
 import utils
 reload(utils)
@@ -12,10 +12,10 @@ reload(fftTools)
 from tests import *
 
 
-flipper_root = '/Users/verag/flipper-master/'
+flipper_root = '/home/verag/flipper-master/'
 
-STRING_MAP_FILE = '/Users/verag/Research/strings/strings/data/dTmap_stg_Dcmb0000.fits'
-SPECTRA_FILE = '/Users/verag/Research/strings/strings/data/lensedCls.dat'
+STRING_MAP_FILE = '/data/verag/strings/inputs/dTmap_stg_Dcmb0000.fits' #'/Users/verag/Research/strings/strings/data/dTmap_stg_Dcmb0000.fits'
+SPECTRA_FILE = '/data/verag/strings/inputs/lensedCls.dat' #'/Users/verag/Research/strings/strings/data/lensedCls.dat'
 
 
 def obtain_N_cmb_maps(fwhm=1.4, string_file_num=0,
@@ -24,7 +24,7 @@ def obtain_N_cmb_maps(fwhm=1.4, string_file_num=0,
                         beam_smear=True, Nmaps=1, Gmu=0.,
                         noise=16, Nx=None, Ny=None):
 
-    string_map_file = '/Users/verag/Research/strings/strings/data/dTmap_stg_Dcmb000{}.fits'.format(string_file_num) # this can be 0-9
+    string_map_file = '/data/verag/strings/inputs/dTmap_stg_Dcmb000{}.fits'.format(string_file_num) # this can be 0-9
 
     maps = []
     maps_stringy = []

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import liteMap
 import fftTools
 from flipper import *
-STRING_MAP_FILE = '/Users/verag/Research/strings/strings/data/dTmap_stg_Dcmb0000.fits'
+STRING_MAP_FILE = '/data/verag/strings/inputs/dTmap_stg_Dcmb0000.fits'#'/Users/verag/Research/strings/strings/data/dTmap_stg_Dcmb0000.fits'
 string_template =  liteMap.liteMapFromFits(STRING_MAP_FILE)
 string_template.Nx, string_template.Ny = np.shape(string_template.data)
 string_fovX = 7.2 #deg
@@ -50,7 +50,7 @@ class PowerSpectrum(Statistic):
         self.name = name
 
     def __call__(self, data, pixScaleX=string_scaleX, pixScaleY=string_scaleY,
-                 bin_file='/Users/verag/flipper-master/params/BIN_100_LOG'):
+                 bin_file='/home/verag/flipper-master/params/BIN_100_LOG'):
         """
            pixScaleX, pixScaleY are in rad/pixel.
 

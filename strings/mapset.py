@@ -12,7 +12,7 @@ from .simulator import obtain_N_cmb_maps
 from .statistic import Statistic
 from .convolve import generate_rotated_stick_convolutions
 
-MAPSROOT = 'maps'
+MAPSROOT = '/data/verag/strings/maps'
 
 def generate_gradmaps(parent_folder='.', scaleX=None, scaleY=None, **kwargs):
     logging.debug('Generating gradmaps, parent folder={}'.format(parent_folder))
