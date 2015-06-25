@@ -24,7 +24,10 @@ def obtain_N_cmb_maps(fwhm=1.4, string_file_num=0,
                         beam_smear=True, Nmaps=1, Gmu=0.,
                         noise=16, Nx=None, Ny=None):
 
-    string_map_file = '/data/verag/strings/inputs/dTmap_stg_Dcmb000{}.fits'.format(string_file_num) # this can be 0-9
+    if string_file_num < 10:
+        string_map_file = '/data/verag/strings/inputs/dTmap_stg_Dcmb000{}.fits'.format(string_file_num) # this can be 0-9
+    else:
+        string_map_file = '/data/verag/strings/inputs/dTmap_stg_Dcmb00{}.fits'.format(string_file_num) # this can be 0-9
 
     maps = []
     maps_stringy = []

@@ -92,14 +92,49 @@ def compute_largemap_stats(statnumber, whichmap='gradgrad_rotstick',
     
 
     
-def compute_pdfs(Nmaps=20):
-    for i in np.arange(Nmaps):
-        print 'calculating for {}/{}...'.format(i+1,Nmaps)
-        compute_largemap_stats(i, whichmap='gradgrad_rotstick',
-                           statname='pdf',
-                            map_fov_deg=72., fwhm=1.4, noise=16.,
-                            Nx=10240, Ny=10240,
-                            Gmu=0., strings=False, string_file_num=0,
-                            name='large_cmb',
-                            stats_kwargs=None,
-                            restag=None, returnres=False,saveres=True)
+def compute_pdfs(Nstart=0, Nmaps=1, Nstringfiles=100, strings=True, Gmu=1.4e-7):
+    if strings:
+        Nx = 1024
+        Ny = 1024
+        map_fov_deg = 7.2
+    else:
+        Nx = 10240
+        Ny = 10240
+        map_fov_deg = 72.
+
+    Nend = Nstart + Nmaps
+    count = 0
+    for j,num in enumerate(np.arange(Nstart,Nend)):
+        for i in np.arange(Nstringfiles):
+            count += 1
+            print 'calculating for {} (map{},string{})/{}...'.format(count,j,i,Nmaps*Nstringfiles)
+            compute_largemap_stats(num, whichmap='gradgrad_rotstick',
+                                   statname='pdf',
+                                   map_fov_deg=map_fov_deg, fwhm=1.4, noise=16.,
+                                   Nx=Nx, Ny=Ny,
+                                   Gmu=Gmu, strings=strings, string_file_num=i,
+                                   name='large_stringy',
+                                   stats_kwargs=None,
+                                   restag=None, returnres=False,saveres=True)
+
+
+
+def sigma_Gmu(Gmu, h1, h2, h1S, h2S): 
+    covh = np.zeros((2,2))
+    covh_inv = np.zeros((2,2))
+    covh[0,0] = (h1 * h1).mean() - h1.mean() * h1.mean()
+    covh[1,1] = (h2 * h2).mean() - h2.mean() * h2.mean()
+    covh[0,1] = (h1 * h2).mean() - h1.mean() * h2.mean()
+    covh[1,0] = covh[0,1]
+    det_covh = covh[0,0]*covh[1,1] - covh[0,1]**2
+
+    covh_inv[0,0] = covh[1,1]/det_covh
+    covh_inv[1,1] = covh[0,0]/det_covh
+    covh_inv[0,1] = -covh[0,1]/det_covh
+    covh_inv[1,0] = covh[1,0]/det_covh
+
+    sigma2_inv = h1S.mean()**2 * covh_inv[0,0] + h2S.mean()**2 * covh_inv[1,1] + 2.*h1S.mean()*h2S.mean() * covh_inv[0,1]
+    res = 1./sigma2_inv**0.5
+    print res/Gmu
+    return res/Gmu
+    
