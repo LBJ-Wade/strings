@@ -119,22 +119,55 @@ def compute_pdfs(Nstart=0, Nmaps=1, Nstringfiles=100, strings=True, Gmu=1.4e-7):
 
 
 
-def sigma_Gmu(Gmu, h1, h2, h1S, h2S): 
+def sigma_Gmu(Gmu, h1m, h2m, h1Sm, h2Sm, check=False): 
+    h1 = h1m - h1m.mean()
+    h2 = h2m - h2m.mean()
+    h1S = h1Sm - h1m.mean()
+    h2S = h2Sm - h2m.mean()
     covh = np.zeros((2,2))
     covh_inv = np.zeros((2,2))
     covh[0,0] = (h1 * h1).mean() - h1.mean() * h1.mean()
     covh[1,1] = (h2 * h2).mean() - h2.mean() * h2.mean()
     covh[0,1] = (h1 * h2).mean() - h1.mean() * h2.mean()
     covh[1,0] = covh[0,1]
+
+    corr_coeff = covh[0,1]/(covh[1,1]*covh[0,0])**0.5
+    if np.isclose(np.abs(corr_coeff),1):
+        res=1./(h1S**2/covh[0,0])**0.5
+        print res
+        return res
+
     det_covh = covh[0,0]*covh[1,1] - covh[0,1]**2
 
     covh_inv[0,0] = covh[1,1]/det_covh
     covh_inv[1,1] = covh[0,0]/det_covh
     covh_inv[0,1] = -covh[0,1]/det_covh
-    covh_inv[1,0] = covh[1,0]/det_covh
+    covh_inv[1,0] = -covh[1,0]/det_covh
 
-    sigma2_inv = h1S.mean()**2 * covh_inv[0,0] + h2S.mean()**2 * covh_inv[1,1] + 2.*h1S.mean()*h2S.mean() * covh_inv[0,1]
+    det_covh = covh[0,0]*covh[1,1] - covh[0,1]**2
+
+    sigma2_inv = h1S**2 * covh_inv[0,0] + h2S**2 * covh_inv[1,1] + 2.*h1S*h2S * covh_inv[0,1]
     res = 1./sigma2_inv**0.5
-    print res/Gmu
+
+    if check:
+        det_covh_inv = covh_inv[0,0]*covh_inv[1,1] - covh_inv[0,1]**2
+        print '\ndet={}, 1/det_inv={}\n'.format(det_covh,1./det_covh_inv)
+        print 'cov:'
+        print '{}  {}'.format(covh[0,0],covh[0,1])
+        print '{}  {}\n'.format(covh[1,0],covh[1,1])
+        print 'inv(cov):'
+        print '{}  {}'.format(covh_inv[0,0],covh_inv[0,1])
+        print '{}  {}\n'.format(covh_inv[1,0],covh_inv[1,1])
+        print '<h1>={}'.format(h1.mean())
+        print '<h2>={}'.format(h2.mean())
+        print '<h1h2>={}'.format((h1*h2).mean())
+        print '<h1^2>={}'.format((h1*h1).mean())
+        print '<h2^2>={}\n'.format((h2*h2).mean())
+        print '<h1^2>-<h1>^2={}'.format((h1*h1).mean()-h1.mean()**2)
+        print '<h2^2>-<h2>^2={}'.format((h2*h2).mean()-h2.mean()**2)
+        print '<h1h2>-<h1><h2>={}\n'.format((h1*h2).mean()-h1.mean()*h2.mean())
+        print 'h1S={}'.format(h1S)
+        print 'h2S={}'.format(h2S)    
+        
     return res/Gmu
     
