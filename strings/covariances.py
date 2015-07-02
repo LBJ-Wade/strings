@@ -12,6 +12,8 @@ from .statistic import PDF, PowerSpectrum, Moments
 from .convolve import generate_rotated_stick_convolutions
 from .mapset import MapSet_Group
 
+FWHM = 1.4
+NOISE = 16.
 SPECTRA_FILE = '/data/verag/strings/inputs/lensedCls.dat'
 STATS_ROOT = '/data/verag/strings/stats'
 pdf_defaults={
@@ -24,7 +26,7 @@ pdf_defaults={
 
 
         
-def compute_largemap_stats(statnumber, whichmap='gradgrad_rotstick',
+def compute_largemap_stat(statnumber, whichmap='gradgrad_rotstick',
                            statname='pdf',
                             map_fov_deg=72., fwhm=1.4, noise=16.,
                             Nx=10240, Ny=10240,
@@ -92,7 +94,10 @@ def compute_largemap_stats(statnumber, whichmap='gradgrad_rotstick',
     
 
     
-def compute_pdfs(Nstart=0, Nmaps=1, Nstringfiles=100, strings=True, Gmu=1.4e-7):
+def compute_stats_batch(Nstart=0, Nmaps=10, Nstringfiles=100, 
+                        strings=True, Gmu=1.4e-7, 
+                        whichmap='gradgrad_rotstick', statname='pdf',
+                        noise=NOISE, fwhm=FWHM):
     if strings:
         Nx = 1024
         Ny = 1024
@@ -103,19 +108,32 @@ def compute_pdfs(Nstart=0, Nmaps=1, Nstringfiles=100, strings=True, Gmu=1.4e-7):
         map_fov_deg = 72.
 
     Nend = Nstart + Nmaps
-    count = 0
+    count = 0 
     for j,num in enumerate(np.arange(Nstart,Nend)):
-        for i in np.arange(Nstringfiles):
-            count += 1
-            print 'calculating for {} (map{},string{})/{}...'.format(count,j,i,Nmaps*Nstringfiles)
-            compute_largemap_stats(num, whichmap='gradgrad_rotstick',
-                                   statname='pdf',
-                                   map_fov_deg=map_fov_deg, fwhm=1.4, noise=16.,
-                                   Nx=Nx, Ny=Ny,
-                                   Gmu=Gmu, strings=strings, string_file_num=i,
-                                   name='large_stringy',
-                                   stats_kwargs=None,
-                                   restag=None, returnres=False,saveres=True)
+        if strings:
+            for i in np.arange(Nstringfiles):
+                count += 1
+                print 'calculating for {} (map{},string{})/{}...'.format(count,j,i,Nmaps*Nstringfiles)
+                compute_largemap_stat(num, whichmap=whichmap,
+                                       statname=statname,
+                                       map_fov_deg=map_fov_deg, fwhm=fwhm, noise=noise,
+                                       Nx=Nx, Ny=Ny,
+                                       Gmu=Gmu, strings=strings, string_file_num=i,
+                                       name='large_stringy',
+                                       stats_kwargs=None,
+                                       restag=None, returnres=False,saveres=True)
+        else:
+            print 'calculating {}/{}...'.format(j+1,Nmaps)
+            compute_largemap_stat(num, whichmap=whichmap,
+                                       statname=statname,
+                                       map_fov_deg=map_fov_deg, fwhm=fwhm, noise=noise,
+                                       Nx=Nx, Ny=Ny,
+                                       Gmu=0., strings=False,
+                                       name='large',
+                                       stats_kwargs=None,
+                                       restag=None, returnres=False,saveres=True)
+            
+            
 
 
 
