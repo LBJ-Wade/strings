@@ -17,11 +17,15 @@ NOISE = 16.
 SPECTRA_FILE = '/data/verag/strings/inputs/lensedCls.dat'
 STATS_ROOT = '/data/verag/strings/stats'
 pdf_defaults={
-    'binmin':{'gradgrad':0,
+    'binmin':{'gradgrad':-5e8,
+              'grad':0,
               'gradgrad_rotstick':3e8,
+              'grad_rotstick':8e4,
               'map':-500},
-    'binmax':{'gradgrad':1e10,
+    'binmax':{'gradgrad':2e9,
+              'grad':5e5,
               'gradgrad_rotstick':7e8,
+              'grad_rotstick':2e5,
               'map':500}}
 
 
@@ -45,6 +49,8 @@ def compute_largemap_stat(statnumber, whichmap='gradgrad_rotstick',
     if whichmap=='gradgrad':
         calc_gradgrad = True
     if whichmap=='gradgrad_rotstick':
+        calc_rotstick = True
+    if whichmap=='grad_rotstick':
         calc_rotstick = True
 
     name += '{}'.format(statnumber)
@@ -86,7 +92,7 @@ def compute_largemap_stat(statnumber, whichmap='gradgrad_rotstick',
             if strings:
                 restag += '_Gmu{:.1e}_stringfile{}'.format(Gmu,string_file_num)
 
-        resfile = STATS_ROOT + '/{}{}_{}.npy'.format(statname,statnumber,restag)        
+        resfile = STATS_ROOT + '/{}_{}{}_{}.npy'.format(whichmap,statname,statnumber,restag)        
         np.save(resfile, res)
 
     if returnres:
@@ -97,7 +103,8 @@ def compute_largemap_stat(statnumber, whichmap='gradgrad_rotstick',
 def compute_stats_batch(Nstart=0, Nmaps=10, Nstringfiles=100, 
                         strings=True, Gmu=1.4e-7, 
                         whichmap='gradgrad_rotstick', statname='pdf',
-                        noise=NOISE, fwhm=FWHM):
+                        noise=NOISE, fwhm=FWHM,
+                        combine_method='max'):
     if strings:
         Nx = 1024
         Ny = 1024

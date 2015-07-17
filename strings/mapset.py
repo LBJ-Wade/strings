@@ -28,7 +28,11 @@ def generate_gradmaps(parent_folder='.', scaleX=None, scaleY=None, **kwargs):
 class MapSet_Group(object):
     def __init__(self, name='cmb', N=100,
                  recalc=False, strings=False,
-                 calc_grad=True,calc_gradgrad=True,calc_rotstick=True,
+                 calc_grad=True,calc_gradgrad=True,
+                 calc_rotstick=True,
+                 combine_method='max',
+                 mask_percentage=0.,
+                 masking_edge=80,
                  **kwargs):
 
         if strings:
@@ -41,7 +45,7 @@ class MapSet_Group(object):
         self.map = MapSet(name, N=N, recalc=recalc,
                             return_strings=strings, **kwargs)
 
-        if calc_grad or calc_gradgrad or calc_rotstick:
+        if calc_grad or calc_gradgrad or calc_rotstick or calc_grad_rotstick:
             logging.debug('Grad Maps being created...')
             self.grad = MapSet('{}/grad'.format(name), N=N, recalc=recalc,
                                 generator=generate_gradmaps,
@@ -56,11 +60,22 @@ class MapSet_Group(object):
                                    scaleX=self.grad.scaleX, scaleY=self.grad.scaleY,
                                    **kwargs)
         if calc_rotstick:
+            logging.debug('(grad) Rotated Stick Convolution Maps being created...')
+            self.grad_rotstick = MapSet('{}/grad/rotstick'.format(name), N=N, recalc=recalc,
+                                   generator=generate_rotated_stick_convolutions,
+                                   parent_folder='{}/{}/grad'.format(MAPSROOT,name),
+                                   scaleX=self.grad.scaleX, scaleY=self.grad.scaleY,
+                                   mask_percentage=mask_percentage,
+                                   masking_edge=masking_edge,
+                                   **kwargs)
+        if calc_rotstick:
             logging.debug('(gradgrad) Rotated Stick Convolution Maps being created...')
             self.gradgrad_rotstick = MapSet('{}/grad/grad/rotstick'.format(name), N=N, recalc=recalc,
                                 generator=generate_rotated_stick_convolutions,
                                 parent_folder='{}/{}/grad/grad'.format(MAPSROOT,name),
-                                default_edge=30,
+                                default_edge=80,combine_method=combine_method,
+                                mask_percentage=mask_percentage,
+                                masking_edge=masking_edge,
                                 **kwargs)
         
 class MapSet(object):
