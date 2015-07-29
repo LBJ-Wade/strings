@@ -104,15 +104,16 @@ def compute_stats_batch(Nstart=0, Nmaps=10, Nstringfiles=100,
                         strings=True, Gmu=1.4e-7, 
                         whichmap='gradgrad_rotstick', statname='pdf',
                         noise=NOISE, fwhm=FWHM,
-                        combine_method='max'):
+                        combine_method='max',
+                        enlarge_side_factor=10):
     if strings:
         Nx = 1024
         Ny = 1024
         map_fov_deg = 7.2
     else:
-        Nx = 10240
-        Ny = 10240
-        map_fov_deg = 72.
+        Nx = 1024 * enlarge_side_factor
+        Ny = 1024 * enlarge_side_factor
+        map_fov_deg = 7.2 * enlarge_side_factor
 
     Nend = Nstart + Nmaps
     count = 0 
